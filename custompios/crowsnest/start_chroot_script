@@ -33,8 +33,8 @@ is_raspbian() {
 get_pkglist() {
     if [[ "$(is_raspbian)" = "1" ]]; then
         CN_BUILD_INSTALL_SH="/home/${BASE_USER}/crowsnest/tools/libs/pkglist-rpi.sh"
-    fi
-    if [[ "$(is_raspbian)" = "0" ]]; then
+        INSTALL_CS="1"
+    else
         CN_BUILD_INSTALL_SH="/home/${BASE_USER}/crowsnest/tools/libs/pkglist-generic.sh"
     fi
 }

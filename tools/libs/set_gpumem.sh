@@ -23,6 +23,14 @@ get_avail_mem() {
     grep "MemTotal" /proc/meminfo | awk '{print $2}'
 }
 
+is_raspbian() {
+    if [[ -f /boot/config.txt ]] && [[ -f /etc/rpi-issue ]]; then
+        echo "1"
+    else
+        echo "0"
+    fi
+}
+
 set_gpu_mem() {
     local mem_split
     mem_split=""
