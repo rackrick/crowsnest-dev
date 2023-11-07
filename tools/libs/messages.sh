@@ -61,9 +61,11 @@ need_sudo_msg() {
 
 not_supported_msg() {
     msg "\nDebian 10 (buster) has reached end of life.\n"
-    msg "Therefore, crowsnest has also ended support for it.\n"
-    msg "Please upgrade to a supported OS release,"
-    msg "we are sorry for the inconvenience.\n"
+    msg "Therefore, crowsnest has also ended full support for it.\n"
+    msg "If you want to use crowsnest with all the latest features,\n"
+    msg "please upgrade to a fully supported OS release."
+    msg "We are sorry for the inconvenience.\n"
+    sleep 2
 }
 
 welcome_msg() {

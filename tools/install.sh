@@ -49,11 +49,6 @@ main() {
 
     [[ -n "${BASE_USER}" ]] || BASE_USER="${SUDO_USER}"
 
-    if [[ "$(is_buster)" = "1" ]]; then
-        not_supported_msg
-        exit 1
-    fi
-
     welcome_msg
 
     msg "Running apt-get update first ...\n"
@@ -71,6 +66,10 @@ main() {
             INSTALL_CS="0"
         fi
         status_msg "Doing some tests ..." "0"
+    fi
+
+    if [[ "$(is_buster)" = "1" ]] && [[ "$(is_raspberry_pi)" == "1" ]]; then
+        not_supported_msg
     fi
 
     if [[ "${INSTALL_CS}" = "1" ]]; then
