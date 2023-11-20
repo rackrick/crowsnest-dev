@@ -65,6 +65,23 @@ main
 }
 
 function brokenfocus {
+    # checks if "focus_automatic_continuous" is configured
+    # call if_focus_automatic_continuous <mycamnameornumber>
+    # returns 1 = true, 0 = false
+    function if_focus_automatic_continuous {
+        local cam
+        cam="${1}"
+        get_param "cam ${cam}" v4l2ctl | grep -c "focus_automatic_continuous"
+    }
+
+    # checks if device has "focus_automatic_continuous"
+    # call has_focus_automatic_continuous <device>
+    # returns 1 if true, 0 if false
+    function has_focus_automatic_continuous {
+        v4l2-ctl -d "${1}" -C "focus_automatic_continuous" &> /dev/null \
+        && echo "1" || echo "0"
+    }
+
     # checks if "focus_absolute" is configured
     # call if_focus_absolute <mycamnameornumber>
     # returns 1 = true, 0 = false
@@ -88,12 +105,13 @@ function brokenfocus {
         local cam conf_val
         local -a params
         cam="${1}"
+        value="${2}"
         conf_val="$(get_param "cam ${cam}" v4l2ctl)"
         if [ -n "${conf_val}" ]; then
             IFS=','; read -ra params <<< "${conf_val}"
             unset IFS
             for i in "${params[@]}"; do
-                grep "focus_absolute" <<< "${i}" || true
+                grep "${value}" <<< "${i}" || true
             done
         fi
     }
@@ -102,12 +120,12 @@ function brokenfocus {
     # ex.: get_current_value /dev/video0
     # spits out focus_absolute=20 ( if set to 20 )
     function get_current_value {
-        v4l2-ctl -d "${1}" -C "focus_absolute" 2> /dev/null | sed 's/:[[:space:]]/=/'
+        v4l2-ctl -d "${1}" -C "${2}" 2> /dev/null | sed 's/:[[:space:]]/=/'
     }
 
     # call set_current_value <device> <value>
     # ex.: set_current_value /dev/video0 focus_absolute=30
-    function set_focus_absolute {
+    function set_value {
         local device value
         device="${1}"
         value="${2}"
@@ -118,16 +136,30 @@ function brokenfocus {
         local cur_val conf_val device
         for cam in $(configured_cams); do
             device="$(get_param "cam ${cam}" device)"
-            cur_val="$(get_current_value "${device}")"
-            conf_val="$(get_conf_value "${cam}")"
+
+            cur_val_automatic="$(get_current_value "${device}" "focus_automatic_continuous")"
+            conf_val_automatic="$(get_conf_value "${cam}" "focus_automatic_continuous")"
+
+            cur_val_absolute="$(get_current_value "${device}" "focus_absolute")"
+            conf_val_absolute="$(get_conf_value "${cam}" "focus_absolute")"
+
+            if [ "$(has_focus_automatic_continuous "${device}")" == "1" ] &&
+            [ "$(if_focus_automatic_continuous "${cam}")" == "1" ] &&
+            [ "${cur_val_automatic}" != "${conf_val_automatic}" ]; then
+                detected_broken_dev_msg
+                set_value "${device}" "${conf_val_automatic}"
+            fi
+
             if [ "$(has_focus_absolute "${device}")" == "1" ] &&
             [ "$(if_focus_absolute "${cam}")" == "1" ] &&
-            [ "${cur_val}" != "${conf_val}" ]; then
+            [ "${cur_val_absolute}" != "${conf_val_absolute}" ]; then
                 detected_broken_dev_msg
-                set_focus_absolute "${device}" "${conf_val}"
+                set_value "${device}" "${conf_val_absolute}"
             fi
+
             if [[ "${CROWSNEST_LOG_LEVEL}" == "debug" ]] && [[ -n "${cur_val}" ]]; then
-                debug_focus_val_msg "$(get_current_value "${device}")"
+                debug_focus_val_msg "$(get_current_value "${device}" "focus_absolute")"
+                debug_focus_val_msg "$(get_current_value "${device}" "focus_automatic_continuous")"
             fi
         done
     }
